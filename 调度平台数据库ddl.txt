@@ -1,0 +1,404 @@
+drop table if exists tb_dispatch;
+
+drop table if exists tb_dispatch_alert;
+
+drop table if exists tb_exec_host;
+
+drop table if exists tb_execute;
+
+drop table if exists tb_execute_detail;
+
+drop table if exists tb_interface;
+
+drop table if exists tb_job_prep;
+
+drop table if exists tb_jobs;
+
+drop table if exists tb_schedule_alert_conf;
+
+drop table if exists tb_schedule_executed;
+
+drop table if exists tb_scheduler;
+
+drop table if exists tb_user;
+
+drop table if exists tb_user_privilege;
+
+drop table if exists tb_user_privilege_link;
+
+drop table if exists tb_user_roles;
+
+drop table if exists tb_user_roles_link;
+
+/*==============================================================*/
+/* Table: tb_dispatch                                           */
+/*==============================================================*/
+create table tb_dispatch
+(
+   dispatch_id          int not null auto_increment comment '调度id',
+   interface_id         int not null comment '接口id',
+   dispatch_name        varchar(255) not null comment '调度名称',
+   dispatch_desc        varchar(255) not null comment '调度描述',
+   minute               varchar(255) not null default '*' comment '分: 0-59',
+   hour                 varchar(255) not null default '03' comment '时: 0-23',
+   day                  varchar(255) not null default '*' comment '日: 1-31',
+   month                varchar(255) not null default '*' comment '月: 1-12',
+   week                 varchar(255) not null default '*' comment '周: mon-sun',
+   creator_id           int not null comment '创建用户id',
+   updater_id           int not null comment '修改用户id',
+   insert_time          int not null comment '创建时间',
+   update_time          int not null comment '修改时间',
+   status               tinyint not null default 0 comment '调度状态:0.删除1.运行中,2.暂停',
+   primary key (dispatch_id)
+);
+
+alter table tb_dispatch comment '调度配置表';
+
+/*==============================================================*/
+/* Index: Index_2                                               */
+/*==============================================================*/
+create index Index_2 on tb_dispatch
+(
+   insert_time
+);
+
+/*==============================================================*/
+/* Index: Index_1                                               */
+/*==============================================================*/
+create index Index_1 on tb_dispatch
+(
+   dispatch_name
+);
+
+/*==============================================================*/
+/* Index: Index_3                                               */
+/*==============================================================*/
+create unique index Index_3 on tb_dispatch
+(
+   interface_id
+);
+
+/*==============================================================*/
+/* Table: tb_dispatch_alert                                     */
+/*==============================================================*/
+create table tb_dispatch_alert
+(
+   id                   int not null auto_increment comment 'id',
+   dispatch_id          int not null comment '调度id',
+   config_id            int not null comment '配置表id',
+   alert_type           tinyint not null default 0 comment '预警类型:1.成功,2.失败',
+   send_mail            varchar(500) not null default '' comment '发送邮箱',
+   creator_id           int not null comment '创建用户id',
+   updater_id           int not null comment '修改用户id',
+   insert_time          int not null default 0 comment '创建时间',
+   update_time          int not null default 0 comment '修改时间',
+   is_deleted           tinyint not null default 0 comment '是否已删除:0.正常,1.删除',
+   primary key (id)
+);
+
+alter table tb_dispatch_alert comment '调度预警表';
+
+/*==============================================================*/
+/* Index: Index_1                                               */
+/*==============================================================*/
+create index Index_1 on tb_dispatch_alert
+(
+   dispatch_id
+);
+
+/*==============================================================*/
+/* Table: tb_exec_host                                          */
+/*==============================================================*/
+create table tb_exec_host
+(
+   server_id            int not null auto_increment comment '服务器id',
+   server_host          varchar(255) not null comment '服务器ip',
+   server_name          varchar(255) not null comment '服务器名称',
+   insert_time          int not null default 0 comment '创建时间',
+   update_time          int not null default 0 comment '修改时间',
+   creator_id           int not null comment '创建用户id',
+   updater_id           int not null comment '修改用户id',
+   is_deleted           tinyint not null default 0 comment '是否已删除',
+   primary key (server_id)
+);
+
+alter table tb_exec_host comment '执行服务器';
+
+/*==============================================================*/
+/* Table: tb_execute                                            */
+/*==============================================================*/
+create table tb_execute
+(
+   exec_id              int not null auto_increment comment '执行id',
+   exec_type            tinyint not null default 1 comment '执行类型: 1.调度, 2.手动',
+   dispatch_id          int not null default 0 comment '调度id',
+   status               tinyint not null default 0 comment '执行状态: 0.成功, 1.运行中, -1.失败',
+   is_push              tinyint not null default 0 comment '是否推送失败消息',
+   insert_time          int not null default 0 comment '创建时间',
+   update_time          int not null default 0 comment '修改时间',
+   primary key (exec_id)
+);
+
+alter table tb_execute comment '调度执行表';
+
+/*==============================================================*/
+/* Table: tb_execute_detail                                     */
+/*==============================================================*/
+create table tb_execute_detail
+(
+   id                   int not null auto_increment comment 'id',
+   exec_id              int not null comment '执行id',
+   job_id               int not null comment '任务id',
+   in_degree            text not null comment '入度id',
+   out_degree           text not null comment '出度id',
+   server_host          varchar(255) not null comment '服务器ip',
+   server_dir           varchar(255) not null comment '脚本目录',
+   server_script        varchar(500) not null comment '脚本命令',
+   position             tinyint not null comment '任务位置: 1.内部, 2.外部',
+   level                smallint not null comment '任务层级',
+   status               varchar(255) not null default '' comment '状态',
+   insert_time          int not null default 0 comment '创建时间',
+   update_time          int not null default 0 comment '修改时间',
+   primary key (id)
+);
+
+alter table tb_execute_detail comment '调度执行详情表';
+
+/*==============================================================*/
+/* Index: Index_1                                               */
+/*==============================================================*/
+create index Index_1 on tb_execute_detail
+(
+   exec_id
+);
+
+/*==============================================================*/
+/* Table: tb_interface                                          */
+/*==============================================================*/
+create table tb_interface
+(
+   interface_id         int not null auto_increment comment '接口id',
+   interface_name       varchar(255) not null default '' comment '接口名称',
+   interface_desc       varchar(255) not null default '' comment '接口说明',
+   retry                tinyint not null default 0 comment '重试次数',
+   insert_time          int not null default 0 comment '创建时间',
+   update_time          int not null default 0 comment '修改时间',
+   creator_id           int not null comment '创建用户id',
+   updater_id           int not null comment '修改用户id',
+   is_deleted           tinyint not null default 0 comment '是否已删除',
+   primary key (interface_id)
+);
+
+alter table tb_interface comment '接口表';
+
+/*==============================================================*/
+/* Index: Index_1                                               */
+/*==============================================================*/
+create index Index_1 on tb_interface
+(
+   interface_name
+);
+
+/*==============================================================*/
+/* Index: Index_2                                               */
+/*==============================================================*/
+create index Index_2 on tb_interface
+(
+   insert_time
+);
+
+/*==============================================================*/
+/* Table: tb_job_prep                                           */
+/*==============================================================*/
+create table tb_job_prep
+(
+   id                   int not null auto_increment comment 'id',
+   job_id               int not null comment '任务id',
+   prep_id              int comment '依赖id',
+   insert_time          int not null default 0 comment '创建时间',
+   update_time          int not null default 0 comment '修改时间',
+   creator_id           int not null comment '创建用户id',
+   updater_id           int not null comment '修改用户id',
+   is_deleted           tinyint not null default 0 comment '是否已删除',
+   primary key (id)
+);
+
+alter table tb_job_prep comment '任务依赖表';
+
+/*==============================================================*/
+/* Table: tb_jobs                                               */
+/*==============================================================*/
+create table tb_jobs
+(
+   job_id               int not null auto_increment comment '任务id',
+   interface_id         int not null comment '接口id',
+   job_name             varchar(255) not null comment '任务名称',
+   job_desc             varchar(255) not null default '' comment '任务描述',
+   server_id            int not null comment '服务器id',
+   server_dir           varchar(255) not null comment '脚本目录',
+   server_script        varchar(500) not null comment '脚本命令',
+   run_period           varchar(14) not null default '' comment '秒账期',
+   insert_time          int not null default 0 comment '创建时间',
+   update_time          int not null default 0 comment '修改时间',
+   creator_id           int not null comment '创建用户id',
+   updater_id           int not null comment '修改用户id',
+   is_deleted           tinyint not null default 0 comment '是否已删除',
+   primary key (job_id)
+)
+ENGINE=InnoDB AUTO_INCREMENT=68 DEFAULT CHARSET=utf8 COMMENT='项目主表';
+
+alter table tb_jobs comment '任务表';
+
+/*==============================================================*/
+/* Index: Index_1                                               */
+/*==============================================================*/
+create index Index_1 on tb_jobs
+(
+   job_name
+);
+
+/*==============================================================*/
+/* Index: Index_2                                               */
+/*==============================================================*/
+create index Index_2 on tb_jobs
+(
+   insert_time
+);
+
+/*==============================================================*/
+/* Table: tb_schedule_alert_conf                                */
+/*==============================================================*/
+create table tb_schedule_alert_conf
+(
+   id                   int not null auto_increment comment '配置id',
+   alert_channel        tinyint not null default 0 comment '预警渠道:1.邮件,2.钉钉',
+   conf_name            varchar(255) not null comment '配置名称',
+   param_host           varchar(255) not null default '' comment '域名: 邮箱用',
+   param_port           int not null comment '端口: 邮箱用',
+   param_config         varchar(255) not null default '' comment '参数配置:邮箱或机器人api',
+   param_pass           varchar(255) not null default '' comment '密码: 邮箱用',
+   insert_time          int not null default 0 comment '创建时间',
+   update_time          int not null default 0 comment '修改时间',
+   creator_id           int not null comment '创建用户id',
+   updater_id           int not null comment '修改用户id',
+   is_deleted           tinyint not null default 0 comment '是否已删除:0.正常,1.删除',
+   primary key (id)
+);
+
+alter table tb_schedule_alert_conf comment '执行流预警配置表';
+
+/*==============================================================*/
+/* Table: tb_schedule_executed                                  */
+/*==============================================================*/
+create table tb_schedule_executed
+(
+   id                   int not null auto_increment comment '日志id',
+   job_id               int not null comment '调度id',
+   run_date             varchar(10) not null comment '运行日期',
+   start_time           int not null comment '开始时间',
+   end_time             int not null comment '结束时间',
+   status               tinyint not null comment '状态',
+   primary key (id)
+);
+
+alter table tb_schedule_executed comment '调度日志表';
+
+/*==============================================================*/
+/* Table: tb_scheduler                                          */
+/*==============================================================*/
+create table tb_scheduler
+(
+   id                   varchar(191) not null comment '执行流id',
+   next_run_time        double default null comment '下次运行时间',
+   job_state            blob not null comment '任务持久化对象: pickle.loads(blob)'
+);
+
+alter table tb_scheduler comment 'apscheduler持久化表-防止系统重启';
+
+/*==============================================================*/
+/* Table: tb_user                                               */
+/*==============================================================*/
+create table tb_user
+(
+   id                   int not null auto_increment comment '用户id',
+   user_name            varchar(20) not null default '' comment '用户名',
+   password             varchar(40) not null default '' comment '密码',
+   create_time          int not null default 0 comment '创建时间',
+   update_time          int not null default 0 comment '修改时间',
+   is_deleted           tinyint not null default 0 comment '是否已删除:0.正常,1.删除',
+   primary key (id)
+);
+
+alter table tb_user comment '用户表';
+
+/*==============================================================*/
+/* Index: Index_1                                               */
+/*==============================================================*/
+create index Index_1 on tb_user
+(
+   user_name
+);
+
+/*==============================================================*/
+/* Table: tb_user_privilege                                     */
+/*==============================================================*/
+create table tb_user_privilege
+(
+   id                   int not null auto_increment comment '权限id',
+   name                 varchar(40) not null default '' comment '权限名称',
+   description          varchar(100) not null default '' comment '描述',
+   create_time          int not null default 0 comment '创建时间',
+   update_time          int not null default 0 comment '修改时间',
+   is_deleted           tinyint not null default 0 comment '是否已删除:0.正常,1.删除',
+   primary key (id)
+);
+
+alter table tb_user_privilege comment '权限表';
+
+/*==============================================================*/
+/* Table: tb_user_privilege_link                                */
+/*==============================================================*/
+create table tb_user_privilege_link
+(
+   id                   int not null auto_increment,
+   role_id              int not null default 0 comment '角色id',
+   privilege_id         int not null default 0 comment '权限id',
+   create_time          int not null default 0 comment '创建时间',
+   update_time          int not null default 0 comment '修改时间',
+   is_deleted           tinyint not null default 0 comment '是否已删除:0.正常,1.删除',
+   primary key (id)
+);
+
+alter table tb_user_privilege_link comment '角色权限关联表';
+
+/*==============================================================*/
+/* Table: tb_user_roles                                         */
+/*==============================================================*/
+create table tb_user_roles
+(
+   id                   int not null auto_increment comment '角色id',
+   name                 varchar(40) not null default '' comment '角色名',
+   description          varchar(100) not null default '' comment '描述',
+   create_time          int not null default 0 comment '创建时间',
+   update_time          int not null default 0 comment '修改时间',
+   is_deleted           tinyint not null default 0 comment '是否已删除:0.正常,1.删除',
+   primary key (id)
+);
+
+alter table tb_user_roles comment '角色表';
+
+/*==============================================================*/
+/* Table: tb_user_roles_link                                    */
+/*==============================================================*/
+create table tb_user_roles_link
+(
+   id                   int not null auto_increment,
+   user_id              int not null default 0 comment '用户id',
+   role_id              int not null default 0 comment '角色id',
+   create_time          int not null default 0 comment '创建时间',
+   update_time          int not null default 0 comment '修改时间',
+   is_deleted           tinyint not null default 0 comment '是否已删除:0.正常,1.删除',
+   primary key (id)
+);
+
+alter table tb_user_roles_link comment '用户角色关联表';
